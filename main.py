@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from database.models.user import *
 from Conditions import *
 
-TOKEN = "5884056129:AAGA_c-KAS4-BIsNKkmjRffFp2_TAGfP04A"
+TOKEN = ""
 
 dp = Dispatcher()
 
