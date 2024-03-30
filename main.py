@@ -2,18 +2,22 @@ import asyncio
 import logging
 import sys
 from os import getenv
+from jinja2 import Environment, FileSystemLoader
 
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.markdown import hbold
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram import F
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from database.models.user import *
 from Conditions import *
+from messages import buttons
 
 TOKEN = "5884056129:AAGA_c-KAS4-BIsNKkmjRffFp2_TAGfP04A"
 
@@ -28,26 +32,41 @@ async def command_start_handler(message: Message) -> None:
     """
     This handler receives messages with `/start` command
     """
+
     telegram_id = message.from_user.id
-    if UserIsRegistered(telegram_id).check():
-        await message.answer(f"И снова здравствуй, {hbold(message.from_user.full_name)}!")
-    else:
+    environment = Environment(loader=FileSystemLoader("messages/"))
+    template = environment.get_template("Greeting.html")
+
+    if not UserIsRegistered(telegram_id).check():
         user = User(telegram_id=telegram_id,
                     status="user")
         with Session(engine) as session:
             session.add_all([user])
             session.commit()
-        await message.answer(f"Здравствуй, {hbold(message.from_user.full_name)}!")
+
+    builder = InlineKeyboardBuilder()
+    builder.add(buttons.CHECK_BY_PHOTO,
+                buttons.TARIFES,
+                buttons.EXAMPLES,
+                buttons.LK,
+                buttons.SUPPORT
+    )
+
+    await message.answer(template.render(), reply_markup=builder.as_markup())
 
 
+@dp.callback_query(F.data == 'support')
+async def suppot(callback: types.CallbackQuery):
+    await callback.message.answer(str((1, 10)))
 
-@dp.message()
-async def echo_handler(message: types.Message) -> None:
-    try:
-        await message.send_copy(chat_id=message.chat.id)
-    except TypeError:
-        # But not all the types is supported to be copied so need to handle it
-        await message.answer("Nice try!")
+
+@dp.callback_query(F.data == 'personal_account')
+async def personal_account(callback: types.CallbackQuery):
+    telegram_id = callback.message.from_user.id
+    environment = Environment(loader=FileSystemLoader("messages/"))
+    template = environment.get_template("PersonalAccount.html", {"telegram_id": telegram_id})
+    template.render()
+    await callback.message.answer(template.render())
 
 
 async def main() -> None:
