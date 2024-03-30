@@ -19,7 +19,7 @@ from database.models.user import *
 from Conditions import *
 from messages import buttons
 
-TOKEN = "5884056129:AAGA_c-KAS4-BIsNKkmjRffFp2_TAGfP04A"
+TOKEN = ""
 
 dp = Dispatcher()
 
